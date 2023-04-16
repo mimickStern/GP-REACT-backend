@@ -30,6 +30,11 @@ app.use('/api/products', productRouter);
 app.use('/api/seed', seedRouter);
 app.use('/api/users', userRouter);
 
+app.use((err, req, res, next) => {
+    res.status(500).send({ message: err.message });
+  });
+
+
 
 
 
