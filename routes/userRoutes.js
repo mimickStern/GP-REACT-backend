@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
-import { generateToken, isAuth } from "../utils.js";
+import { createResetToken, generateToken, isAuth } from "../utils.js";
 
 const userRouter = express.Router();
 
@@ -22,6 +22,23 @@ userRouter.post("/signin", async (req, res) => {
     }
   }
   res.status(401).send({ message: "Invalid email or password" });
+});
+
+userRouter.post("/forgot-pwd", async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (user) {
+    
+      res.send({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        token: createResetToken(user),
+      });
+      return;
+    
+  }
+  res.status(401).send({ message: "Invalid email" });
 });
 
 userRouter.post("/signup", async (req, res) => {

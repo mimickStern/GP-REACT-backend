@@ -11,7 +11,10 @@ productRouter.get("/", async (req, res) => {
 const PAGE_SIZE = 2;
 
 productRouter.get("/search", async (req, res) => {
+    const all = req;
+    console.log(all)
   const { query } = req;
+  console.log(query)
   const pageSize = query.pageSize || PAGE_SIZE;
   const page = query.page || 1;
   const category = query.category || "";
@@ -22,6 +25,7 @@ productRouter.get("/search", async (req, res) => {
 
   const queryFilter =
     searchQuery && searchQuery !== "all"
+    console.log(searchQuery)
       ? {
           name: {
             $regex: searchQuery,
@@ -29,7 +33,9 @@ productRouter.get("/search", async (req, res) => {
           },
         }
       : {};
+
   const categoryFilter = category && category !== "all" ? { category } : {};
+
   const ratingFilter =
     rating && rating !== "all"
       ? {
@@ -38,16 +44,18 @@ productRouter.get("/search", async (req, res) => {
           },
         }
       : {};
+
   const priceFilter =
     price && price !== "all"
       ? {
-          // 1-50
+          // 50-200
           price: {
             $gte: Number(price.split("-")[0]),
             $lte: Number(price.split("-")[1]),
           },
         }
       : {};
+      
   const sortOrder =
     order === "featured"
       ? { featured: -1 }
