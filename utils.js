@@ -7,6 +7,7 @@ export const generateToken = (user) => {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      resetPassword: false,
     },
     process.env.JWT_SECRET,
     {
@@ -15,37 +16,39 @@ export const generateToken = (user) => {
   );
 };
 
-export const createResetToken = (user) => {
+export const createResetToken =  (user) => {
+    
   return jwt.sign(
-    {
-      _id: user._id,
+    {  _id: user._id,
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
-    },
+      resetPassword: true },
     process.env.JWT_SECRET,
-    {
-      expiresIn: "1h",
-    }
+    { expiresIn: '5m' }
   );
+   
 };
 
 export const isAuth = (req, res, next) => {
-  const authorization = req.headers.authorization;
-  if (authorization) {
-    const token = authorization.slice(7, authorization.length); // Bearer XXXXXX
-    jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
-      if (err) {
-        res.status(401).send({ message: "Invalid Token" });
-      } else {
-        req.user = decode;
-        next();
+    const authorization = req.headers.authorization;
+    if (authorization) {
+        const token = authorization.slice(7, authorization.length); // Bearer XXXXXX
+        jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
+            if (err) {
+                res.status(401).send({ message: 'Invalid Token' });
+            } else if (decode.resetPassword) {
+                // grant access to reset password component
+                return res.status(401).send({ message: 'Access denied. This token only allows you to reset your password.' }); }
+            else {
+                req.user = decode;
+                next();
+            }
+        });
+    } else {
+        res.status(401).send({ message: 'No Token' });
       }
-    });
-  } else {
-    res.status(401).send({ message: "No Token" });
-  }
-};
+  };
 
 export const isAdmin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
