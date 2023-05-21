@@ -1,6 +1,7 @@
 import express from "express";
 import Order from "../models/orderModel.js";
 import { isAdmin, isAuth } from "../utils.js";
+import User from "../models/userModel.js";
 
 const orderRouter = express.Router();
 
@@ -25,42 +26,64 @@ orderRouter.get("/my-orders", isAuth, async (req, res) => {
   res.send(orders);
 });
 
-orderRouter.get('/:id', isAuth, (async (req, res) => {
+orderRouter.get("/:id", isAuth, async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (order) {
-     res.send(order);
+    res.send(order);
   } else {
-     res.status(404).send({ message: 'Order Not Found' });
+    res.status(404).send({ message: "Order Not Found" });
   }
-})
-);
+});
 
-orderRouter.put('/:id/pay', isAuth, (async (req, res) => {
+orderRouter.put("/:id/pay", isAuth, async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (order) {
-      order.isPaid = true;
-      order.paidAt = Date.now();
-      order.paymentResult = {
-          id: req.body.id,
-          status: req.body.status,
-          update_time: req.body.update_time,
-          email_address: req.body.email_address,
-      };
+    order.isPaid = true;
+    order.paidAt = Date.now();
+    order.paymentResult = {
+      id: req.body.id,
+      status: req.body.status,
+      update_time: req.body.update_time,
+      email_address: req.body.email_address,
+    };
 
-      const updatedOrder = await order.save();
-      res.send({ message: 'Order Paid', order: updatedOrder });
+    const updatedOrder = await order.save();
+    res.send({ message: "Order Paid", order: updatedOrder });
+  } else {
+    res.status(404).send({ message: "Order Not Found" });
+  }
+});
+
+orderRouter.get("/", isAuth, isAdmin, async (req, res) => {
+  const orders = await Order.find().populate("user", "name");
+  res.send(orders);
+});
+
+orderRouter.put('/:id/deliver', isAuth, isAdmin, async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (order) {
+      order.isDelivered = true;
+      order.deliveredAt = Date.now();
+      await order.save();
+
+      const user = await User.findById(order.user);
+      res.send({ message: 'Order Delivered', data: user });
   } else {
       res.status(404).send({ message: 'Order Not Found' });
   }
- })
+}
 );
 
-orderRouter.get('/', isAuth, isAdmin, async (req, res) => {
-  const orders = await Order.find().populate('user', 'name');
-  res.send(orders);
-         }
-   );
-
+orderRouter.delete('/:id', isAuth, isAdmin, async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (order) {
+      await order.deleteOne();
+      res.send({ message: 'Order Deleted' });
+  } else {
+      res.status(404).send({ message: 'Order Not Found' });
+  }
+ }
+);
 
 
 

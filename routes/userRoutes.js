@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
-import { createResetToken, generateToken, isAuth } from "../utils.js";
+import { createResetToken, generateToken, isAdmin, isAuth } from "../utils.js";
 
 const userRouter = express.Router();
 
@@ -27,16 +27,14 @@ userRouter.post("/signin", async (req, res) => {
 userRouter.post("/forgot-pwd", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
   if (user) {
-    
-      res.send({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        token: createResetToken(user),
-      });
-      return;
-    
+    res.send({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      token: createResetToken(user),
+    });
+    return;
   }
   res.status(401).send({ message: "Invalid email" });
 });
@@ -70,7 +68,7 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
-userRouter.put('/profile', isAuth, (async (req, res) => {
+userRouter.put("/profile", isAuth, async (req, res) => {
   const user = await User.findById(req.user._id);
   if (user) {
     if (req.body.password) {
@@ -86,8 +84,13 @@ userRouter.put('/profile', isAuth, (async (req, res) => {
       token: generateToken(updatedUser),
     });
   } else {
-    res.status(404).send({ message: 'User not found' });
-  }}));
+    res.status(404).send({ message: "User not found" });
+  }
+});
 
+userRouter.get("/", isAuth, isAdmin, async (req, res) => {
+  const users = await User.find({});
+  res.send(users);
+});
 
 export default userRouter;
